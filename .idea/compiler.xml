@@ -12,7 +12,7 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="job4j_pooh" options="--add-exports java.xml.crypto/com.sun.org.slf4j.internal=ALL-UNNAMED" />
+      <module name="job4j_pooh" options="" />
     </option>
   </component>
 </project>

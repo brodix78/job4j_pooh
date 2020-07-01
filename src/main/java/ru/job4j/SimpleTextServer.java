@@ -1,7 +1,10 @@
 package ru.job4j;
 
-import com.sun.org.slf4j.internal.Logger;
-import com.sun.org.slf4j.internal.LoggerFactory;
+//import com.sun.org.slf4j.internal.Logger;
+//import com.sun.org.slf4j.internal.LoggerFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -39,7 +42,7 @@ public class SimpleTextServer implements Runnable{
                     }
                 }
             }
-            Log.debug("Client IP%s is disconnected", clientIP);
+            Log.debug(String.format("Client IP%s is disconnected", clientIP));
         } catch (IOException e) {
             Log.error(e.getMessage(), e);
             Thread.currentThread().interrupt();
