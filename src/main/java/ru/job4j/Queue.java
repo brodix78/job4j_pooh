@@ -1,8 +1,11 @@
 package ru.job4j;
 
+import net.jcip.annotations.ThreadSafe;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+@ThreadSafe
 public class Queue implements QueuesStorage<String> {
 
     private final ConcurrentHashMap<String, ConcurrentLinkedDeque<String>> queue;

@@ -3,6 +3,7 @@ package ru.job4j;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 public class HttpFormatOperator implements Operator {
 
@@ -11,6 +12,12 @@ public class HttpFormatOperator implements Operator {
     private QueuesStorage<String> workStorage;
     private QueuesStorage<String> topicStorage;
     private final Parser parser;
+    private Map<String, Function<String, Map<String, String>>> dispatch =
+            Map.of("POST /Queue", postQueue(),
+                    "POST /topic", postTopic(),
+                    "GET /queue/", getQueue(),
+                    "GET /topic/", getTopic());
+
 
     public HttpFormatOperator(QueuesStorage<String> storage, Parser parser) {
         this.storage = storage;
@@ -24,8 +31,8 @@ public class HttpFormatOperator implements Operator {
      * @return output for client, log information, null if input not (fully) recognised
      */
     @Override
-    public HashMap<String, String> communicate(String input) {
-        HashMap<String, String> response = null;
+    public Map<String, String> communicate(String input) {
+        Map<String, String> response = null;
         if (data != null) {
             HashMap<String, String> json;
             try {
@@ -47,43 +54,95 @@ public class HttpFormatOperator implements Operator {
             } catch (IOException e) {
                 response = new HashMap<>(Map.of("log", "JSON not recognized"));
             }
-        } else if ("POST /queue".equals(input)) {
+        } else {
+            for (String command : dispatch.keySet()) {
+                if (input.length() > 1 && command.startsWith(input)) {
+                    response = dispatch.get(command).apply(input);
+                    break;
+                }
+            }
+        }
+        return response;
+    }
+
+    @Override
+    public Operator getInstance() {
+        return new HttpFormatOperator(this.storage, this.parser);
+    }
+
+    private Function<String, Map<String, String>> postQueue() {
+        return input -> {
             workStorage = storage;
             data = new StringBuilder();
-        } else if ("POST /topic".equals(input)) {
+            return Map.of("log", "waiting for object input");
+        };
+    }
+
+    private Function<String, Map<String, String>> postTopic() {
+        return input -> {
             workStorage = topicStorage == null ? storage.copy() : topicStorage;
             data = new StringBuilder();
-        } else if (input.startsWith("GET /queue/")) {
+            return Map.of("log", "waiting for object input");
+        };
+    }
+
+    private Function<String, Map<String, String>> getQueue() {
+        return input -> {
+            Map<String, String> response;
             data = null;
-            String polled;
+            String polled = null;
             String queueName = input.substring(input.lastIndexOf('/') + 1);
             if (storage.contains(queueName)) {
-                while ((polled = storage.poll(queueName)) == null) {
+                int tries = 0;
+                while (tries++ < 10
+                        && (polled = storage.poll(queueName)) == null) {
                     try {
-                        storage.wait();
+                        storage.wait(1000);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
                 }
-                response = new HashMap<>(Map.of("log", "object polled from queue",
-                        "output", polled));
+                if (polled != null) {
+                    try {
+                        response = Map.of("log", "object polled from queue",
+                                "output",
+                                parser.mapToFormat(new HashMap<>(Map.of("queue", queueName,
+                                        "text", polled))));
+                    } catch (Exception e) {
+                        response = Map.of("log", "format convert issue");
+                    }
+                } else {
+                    response = Map.of("log", "queue is empty");
+                }
             } else {
-                response = new HashMap<>(Map.of("log", "no such queue in storage"));
+                response = Map.of("log", "no such queue in storage");
             }
-        } else if (input.startsWith("GET /topic/")) {
+            return response;
+        };
+    }
+
+    private Function<String, Map<String, String>> getTopic() {
+        return input -> {
+            Map<String, String> response;
             data = null;
             if (topicStorage == null) {
                 topicStorage = storage.copy();
             }
-            String polled = topicStorage.poll(input.substring(input.lastIndexOf('/') + 1));
+            String queueName = input.substring(input.lastIndexOf('/') + 1);
+            String polled = topicStorage.poll(queueName);
             if (polled != null) {
-                response = new HashMap<>(Map.of("log", "object polled from queue copy",
-                        "output", polled));
+                try {
+                    response = Map.of("log", "object polled from queue",
+                            "output",
+                            parser.mapToFormat(new HashMap<>(Map.of("queue", queueName,
+                                    "text", polled))));
+                } catch (Exception e) {
+                    response = Map.of("log", "format convert issue");
+                }
             } else {
-                response = new HashMap<>(Map.of("log", "topics in queue is over"));
+                response = Map.of("log", "topics in queue is over");
             }
-
-        }
-        return response;
+            return response;
+        };
     }
 }

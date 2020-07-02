@@ -1,9 +1,9 @@
 package ru.job4j;
 
-import java.util.HashMap;
+import java.util.Map;
 
 public interface Operator {
 
-    HashMap<String, String> communicate(String input);
-
+    Map<String, String> communicate(String input);
+    Operator getInstance();
 }

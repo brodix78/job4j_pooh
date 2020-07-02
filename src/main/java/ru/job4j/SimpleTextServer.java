@@ -1,16 +1,16 @@
 package ru.job4j;
 
-//import com.sun.org.slf4j.internal.Logger;
-//import com.sun.org.slf4j.internal.LoggerFactory;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
+import java.util.Map;
 
+import net.jcip.annotations.ThreadSafe;
+
+@ThreadSafe
 public class SimpleTextServer implements Runnable{
 
     private final ServerSocket socket;
@@ -19,7 +19,7 @@ public class SimpleTextServer implements Runnable{
 
     public SimpleTextServer(ServerSocket socket, Operator operator) {
         this.socket = socket;
-        this.operator = operator;
+        this.operator = operator.getInstance();
     }
 
     @Override
@@ -31,7 +31,7 @@ public class SimpleTextServer implements Runnable{
             Log.debug(String.format("Client IP%s is connected", clientIP));
             String in;
             while ((in = input.readLine()) != null) {
-                HashMap<String, String> out = operator.communicate(in);
+                Map<String, String> out = operator.communicate(in);
                 if (out != null) {
                     if (out.containsKey("log")) {
                         Log.debug(String.format("Client IP%s : %s", clientIP, out.get("log")));

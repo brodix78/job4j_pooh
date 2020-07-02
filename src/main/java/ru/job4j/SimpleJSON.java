@@ -1,11 +1,14 @@
 package ru.job4j;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.jcip.annotations.ThreadSafe;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+@ThreadSafe
 public class SimpleJSON implements Parser{
 
     @Override
@@ -15,12 +18,7 @@ public class SimpleJSON implements Parser{
     }
 
     @Override
-    public String mapToFormat(HashMap<String, String> map) {
-        StringBuilder json = new StringBuilder(String.format("{%n"));
-        for (String key : map.keySet()) {
-            json.append(String.format("\"%s\" : \"%s\"%n", key, map.get(key)));
-        }
-        json.append("}");
-        return json.toString();
+    public String mapToFormat(HashMap<String, String> map) throws JsonProcessingException {
+        return new ObjectMapper().writeValueAsString(map);
     }
 }
