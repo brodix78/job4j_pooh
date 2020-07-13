@@ -41,18 +41,18 @@ public class HttpFormatOperator implements Operator {
                 if (json != null && json.keySet().size() == 2 && json.containsKey("text")) {
                     if (workStorage == storage && json.containsKey("queue")) {
                         storage.offer(json.get("queue"), json.get("text"));
-                        response = new HashMap<>(Map.of("log", "object added to queue"));
+                        response = Map.of("log", "object added to queue");
                     } else if (workStorage != storage && json.containsKey("topic")) {
                         workStorage.offer(json.get("topic"), json.get("text"));
-                        response = new HashMap<>(Map.of("log", "object added to topic"));
+                        response = Map.of("log", "object added to topic");
                     }
                 }
                 if (response == null) {
-                    response = new HashMap<>(Map.of("log", "wrong JSON data"));
+                    response = Map.of("log", "wrong JSON data");
                 }
                 data = null;
             } catch (IOException e) {
-                response = new HashMap<>(Map.of("log", "JSON not recognized"));
+                response = Map.of("log", "JSON not recognized");
             }
         } else {
             for (String command : dispatch.keySet()) {
